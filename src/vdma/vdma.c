@@ -174,6 +174,7 @@ void vdma_start_triple_buffering(vdma_handle *handle)
         VDMA_CONTROL_REGISTER_GENLOCK_ENABLE |
         VDMA_CONTROL_REGISTER_INTERNAL_GENLOCK |
         VDMA_CONTROL_REGISTER_CIRCULAR_PARK);
+
     vdma_set(handle, OFFSET_VDMA_MM2S_CONTROL_REGISTER,
         (interrupt_frame_count << 16) |
         VDMA_CONTROL_REGISTER_START |
@@ -191,7 +192,7 @@ void vdma_start_triple_buffering(vdma_handle *handle)
     // Extra register index, use first 16 frame pointer registers
     vdma_set(handle, OFFSET_VDMA_S2MM_REG_INDEX, 0);
 
-    // Write physical addresses to control register
+    // Write physical addresses to control registers
     vdma_set(handle, OFFSET_VDMA_S2MM_FRAMEBUFFER1, (int)handle->fb1Addr);
     vdma_set(handle, OFFSET_VDMA_MM2S_FRAMEBUFFER1, (int)handle->fb1Addr);
     vdma_set(handle, OFFSET_VDMA_S2MM_FRAMEBUFFER2, (int)handle->fb2Addr);

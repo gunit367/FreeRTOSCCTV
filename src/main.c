@@ -86,7 +86,8 @@
 #include "xscugic.h"
 #include "xil_exception.h"
 
-#include "gpio/gpio.h"
+/* FreeRTOSCCTV Imports */
+#include "pan/pan_task.h"
 
 /* mainSELECTED_APPLICATION is used to select between three demo applications,
  * as described at the top of this file.
@@ -101,30 +102,12 @@
  */
 #define mainSELECTED_APPLICATION	3
 
-
-
 /*-----------------------------------------------------------*/
 
 /*
  * Configure the hardware as necessary to run this demo.
  */
 static void prvSetupHardware( void );
-
-/*
- * See the comments at the top of this file and above the
- * mainSELECTED_APPLICATION definition.
- */
-#if ( mainSELECTED_APPLICATION == 0 )
-	extern void main_blinky( void );
-#elif ( mainSELECTED_APPLICATION == 1 )
-	extern void main_full( void );
-#elif ( mainSELECTED_APPLICATION == 2 )
-	extern void main_lwIP( void );
-#elif ( mainSELECTED_APPLICATION == 3 )
-   extern int main_DMA( void );
-#else
-	#error Invalid mainSELECTED_APPLICATION setting.  See the comments at the top of this file and above the mainSELECTED_APPLICATION definition.
-#endif
 
 /*
  * The Xilinx projects use a BSP that do not allow the start up code to be
@@ -155,13 +138,10 @@ XScuGic xInterruptController;
 
 void setupPeripherals()
 {
-	gpioInitialise();
-
+   vPanTaskInitialise();
 }
 
-
 extern void main_vdma();
-extern void blinky_demo();
 int main( void )
 {
 	/* See http://www.freertos.org/RTOS-Xilinx-Zynq.html for instructions. */
@@ -169,25 +149,7 @@ int main( void )
 	/* Configure the hardware ready to run the demo. */
 	prvSetupHardware();
 	setupPeripherals();
-	/* The mainSELECTED_APPLICATION setting is described at the top	of this
-	file. */
-	#if( mainSELECTED_APPLICATION == 0 )
-	{
-		blinky_demo();
-	}
-	#elif( mainSELECTED_APPLICATION == 1 )
-	{
-		main_full();
-	}
-	#elif ( mainSELECTED_APPLICATION == 2 )
-	{
-		main_lwIP();
-	}
-	#elif ( mainSELECTED_APPLICATION == 3 )
-	{
-		main_vdma();
-	}
-	#endif
+   main_vdma();
 
 	/* Don't expect to reach here. */
 	return 0;

@@ -1,12 +1,4 @@
 /*
- * gpio.c
- *
- *  Created on: Nov 26, 2018
- *      Author: Grant
- */
-
-
-/*
  * FreeRTOS Kernel V10.1.1
  * Copyright (C) 2018 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
@@ -44,60 +36,103 @@
 #include "task.h"
 
 /* Demo includes. */
-#include "gpio.h"
+#include "pan_task.h"
+#include "xil_io.h"
 
-/* Xilinx includes. */
-#include "xgpio.h"
-
-/* #include "switches.h" */
-
-#define partstNUM_LEDS			( 1 )
-#define partstDIRECTION_OUTPUT	( 0x0f )
-#define partstOUTPUT_ENABLED	( 1 )
-#define partstLED_OUTPUT		( 1 )
-
-/*-----------------------------------------------------------*/
-
-static XGpio xGpio;
-BaseType_t LEDState = 0x0f;
+//#define partstNUM_LEDS			( 1 )
+//#define partstDIRECTION_OUTPUT	( 1 )
+//#define partstOUTPUT_ENABLED	( 1 )
+//#define partstLED_OUTPUT		( 10 )
+//#define SWITCH_AXI_CHANNEL		( 1 )
+#define PWM_BASE XPAR_AXI_TIMER_0_BASEADDR
+#define PAN_FREQ_MS ( 10000 / portTICK_PERIOD_MS )
 
 /*-----------------------------------------------------------*/
 
-void gpioInitialise( void )
+//static XGpio xGpio;
+int state =0;
+
+/*-----------------------------------------------------------*/
+
+void vPanTaskInitialise( void )
 {
-XGpio_Config *pxConfigPtr;
+	state =0;
+/*XGpio_Config *pxConfigPtr;
 BaseType_t xStatus;
 
-	/* Initialise the GPIO driver. */
-	pxConfigPtr = XGpio_LookupConfig( XPAR_XGPIOPS_0_DEVICE_ID );
+	 Initialise the GPIO driver.
+	pxConfigPtr = XGpio_LookupConfig( XPAR_GPIO_0_DEVICE_ID );
 	xStatus = XGpio_CfgInitialize( &xGpio, pxConfigPtr, pxConfigPtr->BaseAddress );
 	configASSERT( xStatus == XST_SUCCESS );
-	( void ) xStatus; /* Remove compiler warning if configASSERT() is not defined. */
+	( void ) xStatus;  Remove compiler warning if configASSERT() is not defined.
 
-	/* Enable outputs and set low. */
-//	XGpioPs_SetDirectionPin( &xGpio, partstLED_OUTPUT, partstDIRECTION_OUTPUT );
-	XGpio_SetDataDirection( &xGpio, partstLED_OUTPUT, ~partstDIRECTION_OUTPUT );
-//	XGpioPs_SetOutputEnablePin( &xGpio, partstLED_OUTPUT, partstOUTPUT_ENABLED );
-
-//	XGpioPs_WritePin( &xGpio, partstLED_OUTPUT, 0x0 );
-	XGpio_DiscreteWrite( &xGpio, partstLED_OUTPUT, 0x0 );
+	 Enable outputs and set low.
+	XGpio_SetDataDirection( &xGpio, SWITCH_AXI_CHANNEL, 0x000f );*/
 }
 /*-----------------------------------------------------------*/
 
-void gpioSetLED( UBaseType_t uxLED, BaseType_t xValue )
-{
-	( void ) uxLED;
-	XGpio_DiscreteWrite( &xGpio, partstLED_OUTPUT, xValue );
-}
+
 /*-----------------------------------------------------------*/
 
-void gpioToggleLED( unsigned portBASE_TYPE uxLED )
+void pan_task( void *prvParameters)
 {
+   ( void ) prvParameters;
+   
+   TickType_t xNextWakeTime;
+   xNextWakeTime = xTaskGetTickCount();
+   
+   for(;;)
+   {
+      vTaskDelayUntil( &xNextWakeTime, PAN_FREQ_MS );
+      vPanTaskPWM();
+   }
+}
 
-	( void ) uxLED;
 
-	LEDState = (LEDState ^ 0x0f) & 0x0f;
-	XGpio_DiscreteWrite( &xGpio, partstLED_OUTPUT, LEDState );
+void vPanTaskPWM()
+{
+    //BaseType_t xSwitchState;
+    uint32_t degrees = 0;
+    switch (state)
+    {
+    	case 0:
+	    	degrees = 0;
+    	    state++;
+        	break;
+    	case 1:
+	    	degrees = 30;
+    	    state++;
+        	break;
+    	case 2:
+	    	degrees = 60;
+    	    state++;
+        	break;
+    	case 3:
+	    	degrees = 90;
+    	    state++;
+        	break;
+    	case 4:
+	    	degrees = 120;
+    	    state++;
+        	break;
+    	case 5:
+	    	degrees = 150;
+    	    state++;
+        	break;
+    	case 6:
+	    	degrees = 180;
+    	    state=0;
+        	break;
+    }
+	//xSwitchState = XGpio_DiscreteRead( &xGpio, SWITCH_AXI_CHANNEL );
+
+	/* Calculate Duty Cycle based off switch state */
+//	degrees += (xSwitchState & 0x08 ) ? 90 : 0 ;
+//	degrees += (xSwitchState & 0x04) ? 45 : 0;
+//	degrees += (xSwitchState & 0x02) ? 22 : 0;
+//	degrees += (xSwitchState & 0x01) ? 11 : 0;
+
+	Xil_Out32(PWM_BASE + 0x14, (20e3 * (900+(10*degrees)) / 180) - 2); /* Write Duty Cycle uptime */
 }
 
 
